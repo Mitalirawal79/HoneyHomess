@@ -1,0 +1,706 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Calendar, 
+  Clock, 
+  IndianRupee, 
+  MapPin, 
+  Phone, 
+  User,
+  Sparkles, 
+  Wrench, 
+  Zap, 
+  ChefHat, 
+  Flower2, 
+  Car,
+  Users,
+  ArrowLeft,
+  Loader2,
+  ShoppingCart
+} from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+const servicesByCategory = {
+  "cleaning": [
+    {
+      id: "utensil-cleaning",
+      icon: Sparkles,
+      title: "Utensil Cleaning",
+      description: "Deep cleaning of all kitchen utensils and dishes",
+      price: "₹199",
+      duration: "1-2 hours",
+      popular: false,
+      features: ["All utensils", "Sanitization", "Eco-friendly products"]
+    },
+    {
+      id: "full-furnished-cleaning",
+      icon: Sparkles,
+      title: "Full Furnished Cleaning",
+      description: "Complete cleaning of fully furnished home",
+      price: "₹499",
+      duration: "3-4 hours",
+      popular: true,
+      features: ["All rooms", "Furniture dusting", "Floor mopping"]
+    },
+    {
+      id: "unfurnished-cleaning",
+      icon: Sparkles,
+      title: "Unfurnished Cleaning",
+      description: "Deep cleaning of unfurnished spaces",
+      price: "₹299",
+      duration: "2-3 hours",
+      popular: false,
+      features: ["Floor cleaning", "Wall wiping", "Window cleaning"]
+    },
+    {
+      id: "full-kitchen-cleaning",
+      icon: Sparkles,
+      title: "Full Kitchen Cleaning",
+      description: "Complete kitchen deep cleaning service",
+      price: "₹399",
+      duration: "2-3 hours",
+      popular: true,
+      features: ["Chimney cleaning", "Appliances", "Platform & sink"]
+    }
+  ],
+  "plumbing": [
+    {
+      id: "bathroom-pipes-change",
+      icon: Wrench,
+      title: "Bathroom Pipes Change",
+      description: "Complete bathroom pipe replacement",
+      price: "₹599",
+      duration: "2-3 hours",
+      popular: true,
+      features: ["Pipe replacement", "Leak testing", "Quality materials"]
+    },
+    {
+      id: "valves-pipes-cleaning",
+      icon: Wrench,
+      title: "Valves & Pipes Cleaning",
+      description: "Professional valve and pipe cleaning",
+      price: "₹299",
+      duration: "1-2 hours",
+      popular: false,
+      features: ["Valve cleaning", "Pipe descaling", "Leak check"]
+    },
+    {
+      id: "tap-installation",
+      icon: Wrench,
+      title: "Tap Installation & Repair",
+      description: "New tap installation and repairs",
+      price: "₹199",
+      duration: "1 hour",
+      popular: false,
+      features: ["All types of taps", "Leak repair", "Warranty included"]
+    },
+    {
+      id: "drain-cleaning",
+      icon: Wrench,
+      title: "Drain Cleaning",
+      description: "Blocked drain and sewage cleaning",
+      price: "₹399",
+      duration: "1-2 hours",
+      popular: true,
+      features: ["Drain unclogging", "Sewage cleaning", "24/7 available"]
+    }
+  ],
+  "painting": [
+    {
+      id: "interior-painting",
+      icon: Zap,
+      title: "Interior Painting",
+      description: "Professional interior wall painting",
+      price: "₹399",
+      duration: "4-6 hours",
+      popular: true,
+      features: ["Room painting", "Color options", "Premium finish"]
+    },
+    {
+      id: "exterior-painting",
+      icon: Zap,
+      title: "Exterior Painting",
+      description: "Durable exterior wall painting",
+      price: "₹599",
+      duration: "6-8 hours",
+      popular: false,
+      features: ["Weatherproof paint", "Surface prep", "Long lasting"]
+    },
+    {
+      id: "texture-painting",
+      icon: Zap,
+      title: "Texture Painting",
+      description: "Designer texture wall painting",
+      price: "₹799",
+      duration: "6-8 hours",
+      popular: true,
+      features: ["Multiple designs", "Premium texture", "Expert application"]
+    },
+    {
+      id: "furniture-painting",
+      icon: Zap,
+      title: "Furniture Painting",
+      description: "Furniture repainting and refinishing",
+      price: "₹299",
+      duration: "2-3 hours",
+      popular: false,
+      features: ["All furniture types", "Color matching", "Smooth finish"]
+    }
+  ],
+  "food": [
+    {
+      id: "daily-meals",
+      icon: ChefHat,
+      title: "Daily Meals Package",
+      description: "Fresh home-cooked meals every day",
+      price: "₹149",
+      duration: "45 mins",
+      popular: true,
+      features: ["Lunch & dinner", "Fresh ingredients", "Custom menu"]
+    },
+    {
+      id: "party-catering",
+      icon: ChefHat,
+      title: "Party Catering",
+      description: "Catering services for parties and events",
+      price: "₹999",
+      duration: "2-3 hours",
+      popular: true,
+      features: ["Multiple dishes", "Serves 10-15", "Setup included"]
+    },
+    {
+      id: "diet-meals",
+      icon: ChefHat,
+      title: "Diet & Healthy Meals",
+      description: "Customized diet-friendly meals",
+      price: "₹199",
+      duration: "45 mins",
+      popular: false,
+      features: ["Low calorie", "High protein", "Nutritionist approved"]
+    },
+    {
+      id: "traditional-meals",
+      icon: ChefHat,
+      title: "Traditional Indian Meals",
+      description: "Authentic traditional Indian cuisine",
+      price: "₹179",
+      duration: "45 mins",
+      popular: false,
+      features: ["Regional cuisine", "Traditional recipes", "Home style"]
+    }
+  ],
+  "mens-massage": [
+    {
+      id: "sports-massage",
+      icon: Users,
+      title: "Sports Massage",
+      description: "Deep tissue massage for athletes",
+      price: "₹699",
+      duration: "60 mins",
+      popular: true,
+      features: ["Male therapist", "Deep tissue", "Muscle recovery"]
+    },
+    {
+      id: "stress-relief",
+      icon: Users,
+      title: "Stress Relief Therapy",
+      description: "Relaxation massage for stress relief",
+      price: "₹599",
+      duration: "60 mins",
+      popular: true,
+      features: ["Male therapist", "Full body", "Aromatherapy"]
+    },
+    {
+      id: "back-shoulder-massage",
+      icon: Users,
+      title: "Back & Shoulder Massage",
+      description: "Targeted massage for back and shoulders",
+      price: "₹499",
+      duration: "45 mins",
+      popular: false,
+      features: ["Male therapist", "Pain relief", "Pressure point therapy"]
+    },
+    {
+      id: "head-massage",
+      icon: Users,
+      title: "Head & Neck Massage",
+      description: "Relaxing head and neck massage",
+      price: "₹399",
+      duration: "30 mins",
+      popular: false,
+      features: ["Male therapist", "Hair oil included", "Stress relief"]
+    }
+  ],
+  "womens-massage": [
+    {
+      id: "spa-package",
+      icon: Flower2,
+      title: "Premium Spa Package",
+      description: "Complete spa experience at home",
+      price: "₹899",
+      duration: "90 mins",
+      popular: true,
+      features: ["Female therapist", "Full body massage", "Facial included"]
+    },
+    {
+      id: "aromatherapy",
+      icon: Flower2,
+      title: "Aromatherapy Massage",
+      description: "Relaxing aromatherapy session",
+      price: "₹649",
+      duration: "60 mins",
+      popular: true,
+      features: ["Female therapist", "Essential oils", "Full relaxation"]
+    },
+    {
+      id: "prenatal-massage",
+      icon: Flower2,
+      title: "Prenatal Massage",
+      description: "Safe massage for expecting mothers",
+      price: "₹799",
+      duration: "60 mins",
+      popular: false,
+      features: ["Female therapist", "Pregnancy safe", "Gentle techniques"]
+    },
+    {
+      id: "beauty-treatments",
+      icon: Flower2,
+      title: "Beauty Treatments",
+      description: "Facial and beauty services",
+      price: "₹599",
+      duration: "60 mins",
+      popular: true,
+      features: ["Female therapist", "Facial & cleanup", "Beauty products"]
+    }
+  ],
+  "car": [
+    {
+      id: "basic-car-wash",
+      icon: Car,
+      title: "Basic Car Wash",
+      description: "Exterior wash and vacuum",
+      price: "₹199",
+      duration: "30 mins",
+      popular: true,
+      features: ["Exterior wash", "Vacuum cleaning", "At your location"]
+    },
+    {
+      id: "deep-car-cleaning",
+      icon: Car,
+      title: "Deep Car Cleaning",
+      description: "Complete interior and exterior cleaning",
+      price: "₹499",
+      duration: "60 mins",
+      popular: true,
+      features: ["Full interior", "Exterior polish", "Dashboard cleaning"]
+    },
+    {
+      id: "car-polish",
+      icon: Car,
+      title: "Car Polish & Wax",
+      description: "Professional car polishing service",
+      price: "₹799",
+      duration: "90 mins",
+      popular: false,
+      features: ["Body polish", "Wax coating", "Scratch removal"]
+    },
+    {
+      id: "engine-cleaning",
+      icon: Car,
+      title: "Engine Cleaning",
+      description: "Professional engine bay cleaning",
+      price: "₹399",
+      duration: "45 mins",
+      popular: false,
+      features: ["Engine degreasing", "Bay cleaning", "Safe for engine"]
+    }
+  ]
+};
+
+export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
+  const { user } = useAuth();
+  const [selectedService, setSelectedService] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const availableServices = serviceCategory ? servicesByCategory[serviceCategory] || [] : [];
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    date: "",
+    time: "",
+    notes: ""
+  });
+
+  // Pre-fill form with user profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, phone, address")
+          .eq("id", user.id)
+          .maybeSingle();
+        
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile.full_name || "",
+            phone: profile.phone || "",
+            address: profile.address || ""
+          }));
+        }
+      }
+    };
+    if (open) {
+      fetchProfile();
+    }
+  }, [user, open]);
+
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+  };
+
+  const handleBack = () => {
+    setSelectedService(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedService || !user) return;
+
+    // Validate phone number
+    if (formData.phone.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Extract numeric price from string (e.g., "₹199" -> 199)
+    const priceMatch = selectedService.price.match(/\d+/);
+    const numericPrice = priceMatch ? parseInt(priceMatch[0], 10) : 0;
+
+    const { error } = await supabase.from("service_orders").insert({
+      user_id: user.id,
+      service_id: selectedService.id,
+      service_name: selectedService.title,
+      service_price: numericPrice,
+      scheduled_date: formData.date,
+      scheduled_time: formData.time,
+      address: formData.address,
+      phone: formData.phone,
+      notes: formData.notes || null,
+      status: "pending"
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error("Error creating booking:", error);
+      toast.error("Failed to create booking. Please try again.");
+      return;
+    }
+
+    toast.success("Booking created successfully! We'll contact you shortly.");
+    onOpenChange(false);
+    setSelectedService(null);
+    setFormData({
+      name: "",
+      phone: "",
+      address: "",
+      date: "",
+      time: "",
+      notes: ""
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {!selectedService ? (
+          // Service Selection View
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Select a Service</DialogTitle>
+              <DialogDescription>
+                Choose the service you would like to book
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              {availableServices.map((service) => {
+                const IconComponent = service.icon;
+                return (
+                  <Card 
+                    key={service.id} 
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-border/50"
+                    onClick={() => handleServiceSelect(service)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                          <IconComponent className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-foreground">{service.title}</h3>
+                            {service.popular && (
+                              <Badge className="bg-primary text-primary-foreground text-xs">Popular</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+                          <div className="flex items-center space-x-4 mt-2 text-sm">
+                            <div className="flex items-center space-x-1">
+                              <IndianRupee className="h-3 w-3 text-primary" />
+                              <span className="font-semibold text-foreground">{service.price}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3 text-primary" />
+                              <span className="text-muted-foreground">{service.duration}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          // Booking Form View  
+          <>
+            <DialogHeader>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBack}
+                  className="p-1 h-8 w-8"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <DialogTitle className="text-2xl">Book {selectedService.title}</DialogTitle>
+                  <DialogDescription>
+                    Fill in your details to book this service
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Service Summary */}
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    {selectedService.title}
+                    {selectedService.popular && (
+                      <Badge className="bg-primary text-primary-foreground">Popular</Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-muted-foreground">{selectedService.description}</p>
+                  
+                  <div className="flex items-center space-x-6 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <IndianRupee className="h-4 w-4 text-primary" />
+                      <span className="font-semibold">{selectedService.price}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4 text-primary" />
+                      <span>{selectedService.duration}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">What's included:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedService.features.map((feature, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Booking Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="flex items-center space-x-1">
+                      <User className="h-4 w-4" />
+                      <span>Full Name</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center space-x-1">
+                      <Phone className="h-4 w-4" />
+                      <span>Phone Number</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({ ...formData, phone: value });
+                      }}
+                      placeholder="Enter 10-digit phone number"
+                      pattern="[0-9]{10}"
+                      maxLength={10}
+                      required
+                    />
+                    {formData.phone && formData.phone.length !== 10 && (
+                      <p className="text-xs text-destructive">Phone number must be exactly 10 digits</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="flex items-center space-x-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>Service Address</span>
+                  </Label>
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Enter complete address where service is needed"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date" className="flex items-center space-x-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>Preferred Date</span>
+                    </Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2 group relative">
+                    <div className="flex items-center space-x-1 cursor-pointer">
+                      <Clock className="h-4 w-4" />
+                      <span>Preferred Time</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {formData.time || "(hover to select)"}
+                      </span>
+                    </div>
+                    <div className="absolute top-full left-0 right-0 z-50 bg-background border rounded-md p-3 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 animate-fade-in">
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          "09:00 AM", "10:00 AM", "11:00 AM",
+                          "12:00 PM", "01:00 PM", "02:00 PM",
+                          "03:00 PM", "04:00 PM", "05:00 PM",
+                          "06:00 PM", "07:00 PM", "08:00 PM"
+                        ].map((slot) => (
+                          <Button
+                            key={slot}
+                            type="button"
+                            variant={formData.time === slot ? "default" : "outline"}
+                            className={`text-sm ${formData.time === slot ? "bg-primary text-primary-foreground" : ""}`}
+                            onClick={() => setFormData({ ...formData, time: slot })}
+                          >
+                            {slot}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Any special requirements or notes..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      if (!selectedService || !user) return;
+                      const priceMatch = selectedService.price.match(/\d+/);
+                      const numericPrice = priceMatch ? parseInt(priceMatch[0], 10) : 0;
+                      
+                      const { error } = await supabase.from("cart_items").insert({
+                        user_id: user.id,
+                        service_id: selectedService.id,
+                        service_name: selectedService.title,
+                        service_price: numericPrice,
+                        quantity: 1
+                      });
+                      
+                      if (error) {
+                        toast.error("Failed to add to cart");
+                        return;
+                      }
+                      toast.success("Added to cart!");
+                      onOpenChange(false);
+                    }}
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Booking...
+                      </>
+                    ) : (
+                      "Confirm Booking"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
