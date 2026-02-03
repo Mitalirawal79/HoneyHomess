@@ -12,30 +12,40 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
-  Clock, 
-  IndianRupee, 
-  MapPin, 
-  Phone, 
+import {
+  Calendar,
+  Clock,
+  IndianRupee,
+  MapPin,
+  Phone,
   User,
-  Sparkles, 
-  Wrench, 
-  Zap, 
-  ChefHat, 
-  Flower2, 
+  Sparkles,
+  Wrench,
+  Zap,
+  ChefHat,
+  Flower2,
   Car,
   Users,
   ArrowLeft,
   Loader2,
-  ShoppingCart
+  ShoppingCart,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+const loadRazorpay = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const servicesByCategory = {
-  "cleaning": [
+  cleaning: [
     {
       id: "utensil-cleaning",
       icon: Sparkles,
@@ -44,7 +54,7 @@ const servicesByCategory = {
       price: "₹199",
       duration: "1-2 hours",
       popular: false,
-      features: ["All utensils", "Sanitization", "Eco-friendly products"]
+      features: ["All utensils", "Sanitization", "Eco-friendly products"],
     },
     {
       id: "full-furnished-cleaning",
@@ -54,7 +64,7 @@ const servicesByCategory = {
       price: "₹499",
       duration: "3-4 hours",
       popular: true,
-      features: ["All rooms", "Furniture dusting", "Floor mopping"]
+      features: ["All rooms", "Furniture dusting", "Floor mopping"],
     },
     {
       id: "unfurnished-cleaning",
@@ -64,7 +74,7 @@ const servicesByCategory = {
       price: "₹299",
       duration: "2-3 hours",
       popular: false,
-      features: ["Floor cleaning", "Wall wiping", "Window cleaning"]
+      features: ["Floor cleaning", "Wall wiping", "Window cleaning"],
     },
     {
       id: "full-kitchen-cleaning",
@@ -74,10 +84,10 @@ const servicesByCategory = {
       price: "₹399",
       duration: "2-3 hours",
       popular: true,
-      features: ["Chimney cleaning", "Appliances", "Platform & sink"]
-    }
+      features: ["Chimney cleaning", "Appliances", "Platform & sink"],
+    },
   ],
-  "plumbing": [
+  plumbing: [
     {
       id: "bathroom-pipes-change",
       icon: Wrench,
@@ -86,7 +96,7 @@ const servicesByCategory = {
       price: "₹599",
       duration: "2-3 hours",
       popular: true,
-      features: ["Pipe replacement", "Leak testing", "Quality materials"]
+      features: ["Pipe replacement", "Leak testing", "Quality materials"],
     },
     {
       id: "valves-pipes-cleaning",
@@ -96,7 +106,7 @@ const servicesByCategory = {
       price: "₹299",
       duration: "1-2 hours",
       popular: false,
-      features: ["Valve cleaning", "Pipe descaling", "Leak check"]
+      features: ["Valve cleaning", "Pipe descaling", "Leak check"],
     },
     {
       id: "tap-installation",
@@ -106,7 +116,7 @@ const servicesByCategory = {
       price: "₹199",
       duration: "1 hour",
       popular: false,
-      features: ["All types of taps", "Leak repair", "Warranty included"]
+      features: ["All types of taps", "Leak repair", "Warranty included"],
     },
     {
       id: "drain-cleaning",
@@ -116,10 +126,10 @@ const servicesByCategory = {
       price: "₹399",
       duration: "1-2 hours",
       popular: true,
-      features: ["Drain unclogging", "Sewage cleaning", "24/7 available"]
-    }
+      features: ["Drain unclogging", "Sewage cleaning", "24/7 available"],
+    },
   ],
-  "painting": [
+  painting: [
     {
       id: "interior-painting",
       icon: Zap,
@@ -128,7 +138,7 @@ const servicesByCategory = {
       price: "₹399",
       duration: "4-6 hours",
       popular: true,
-      features: ["Room painting", "Color options", "Premium finish"]
+      features: ["Room painting", "Color options", "Premium finish"],
     },
     {
       id: "exterior-painting",
@@ -138,7 +148,7 @@ const servicesByCategory = {
       price: "₹599",
       duration: "6-8 hours",
       popular: false,
-      features: ["Weatherproof paint", "Surface prep", "Long lasting"]
+      features: ["Weatherproof paint", "Surface prep", "Long lasting"],
     },
     {
       id: "texture-painting",
@@ -148,7 +158,7 @@ const servicesByCategory = {
       price: "₹799",
       duration: "6-8 hours",
       popular: true,
-      features: ["Multiple designs", "Premium texture", "Expert application"]
+      features: ["Multiple designs", "Premium texture", "Expert application"],
     },
     {
       id: "furniture-painting",
@@ -158,10 +168,10 @@ const servicesByCategory = {
       price: "₹299",
       duration: "2-3 hours",
       popular: false,
-      features: ["All furniture types", "Color matching", "Smooth finish"]
-    }
+      features: ["All furniture types", "Color matching", "Smooth finish"],
+    },
   ],
-  "food": [
+  food: [
     {
       id: "daily-meals",
       icon: ChefHat,
@@ -170,7 +180,7 @@ const servicesByCategory = {
       price: "₹149",
       duration: "45 mins",
       popular: true,
-      features: ["Lunch & dinner", "Fresh ingredients", "Custom menu"]
+      features: ["Lunch & dinner", "Fresh ingredients", "Custom menu"],
     },
     {
       id: "party-catering",
@@ -180,7 +190,7 @@ const servicesByCategory = {
       price: "₹999",
       duration: "2-3 hours",
       popular: true,
-      features: ["Multiple dishes", "Serves 10-15", "Setup included"]
+      features: ["Multiple dishes", "Serves 10-15", "Setup included"],
     },
     {
       id: "diet-meals",
@@ -190,7 +200,7 @@ const servicesByCategory = {
       price: "₹199",
       duration: "45 mins",
       popular: false,
-      features: ["Low calorie", "High protein", "Nutritionist approved"]
+      features: ["Low calorie", "High protein", "Nutritionist approved"],
     },
     {
       id: "traditional-meals",
@@ -200,8 +210,8 @@ const servicesByCategory = {
       price: "₹179",
       duration: "45 mins",
       popular: false,
-      features: ["Regional cuisine", "Traditional recipes", "Home style"]
-    }
+      features: ["Regional cuisine", "Traditional recipes", "Home style"],
+    },
   ],
   "mens-massage": [
     {
@@ -212,7 +222,7 @@ const servicesByCategory = {
       price: "₹699",
       duration: "60 mins",
       popular: true,
-      features: ["Male therapist", "Deep tissue", "Muscle recovery"]
+      features: ["Male therapist", "Deep tissue", "Muscle recovery"],
     },
     {
       id: "stress-relief",
@@ -222,7 +232,7 @@ const servicesByCategory = {
       price: "₹599",
       duration: "60 mins",
       popular: true,
-      features: ["Male therapist", "Full body", "Aromatherapy"]
+      features: ["Male therapist", "Full body", "Aromatherapy"],
     },
     {
       id: "back-shoulder-massage",
@@ -232,7 +242,7 @@ const servicesByCategory = {
       price: "₹499",
       duration: "45 mins",
       popular: false,
-      features: ["Male therapist", "Pain relief", "Pressure point therapy"]
+      features: ["Male therapist", "Pain relief", "Pressure point therapy"],
     },
     {
       id: "head-massage",
@@ -242,8 +252,8 @@ const servicesByCategory = {
       price: "₹399",
       duration: "30 mins",
       popular: false,
-      features: ["Male therapist", "Hair oil included", "Stress relief"]
-    }
+      features: ["Male therapist", "Hair oil included", "Stress relief"],
+    },
   ],
   "womens-massage": [
     {
@@ -254,7 +264,7 @@ const servicesByCategory = {
       price: "₹899",
       duration: "90 mins",
       popular: true,
-      features: ["Female therapist", "Full body massage", "Facial included"]
+      features: ["Female therapist", "Full body massage", "Facial included"],
     },
     {
       id: "aromatherapy",
@@ -264,7 +274,7 @@ const servicesByCategory = {
       price: "₹649",
       duration: "60 mins",
       popular: true,
-      features: ["Female therapist", "Essential oils", "Full relaxation"]
+      features: ["Female therapist", "Essential oils", "Full relaxation"],
     },
     {
       id: "prenatal-massage",
@@ -274,7 +284,7 @@ const servicesByCategory = {
       price: "₹799",
       duration: "60 mins",
       popular: false,
-      features: ["Female therapist", "Pregnancy safe", "Gentle techniques"]
+      features: ["Female therapist", "Pregnancy safe", "Gentle techniques"],
     },
     {
       id: "beauty-treatments",
@@ -284,10 +294,10 @@ const servicesByCategory = {
       price: "₹599",
       duration: "60 mins",
       popular: true,
-      features: ["Female therapist", "Facial & cleanup", "Beauty products"]
-    }
+      features: ["Female therapist", "Facial & cleanup", "Beauty products"],
+    },
   ],
-  "car": [
+  car: [
     {
       id: "basic-car-wash",
       icon: Car,
@@ -296,7 +306,7 @@ const servicesByCategory = {
       price: "₹199",
       duration: "30 mins",
       popular: true,
-      features: ["Exterior wash", "Vacuum cleaning", "At your location"]
+      features: ["Exterior wash", "Vacuum cleaning", "At your location"],
     },
     {
       id: "deep-car-cleaning",
@@ -306,7 +316,7 @@ const servicesByCategory = {
       price: "₹499",
       duration: "60 mins",
       popular: true,
-      features: ["Full interior", "Exterior polish", "Dashboard cleaning"]
+      features: ["Full interior", "Exterior polish", "Dashboard cleaning"],
     },
     {
       id: "car-polish",
@@ -316,7 +326,7 @@ const servicesByCategory = {
       price: "₹799",
       duration: "90 mins",
       popular: false,
-      features: ["Body polish", "Wax coating", "Scratch removal"]
+      features: ["Body polish", "Wax coating", "Scratch removal"],
     },
     {
       id: "engine-cleaning",
@@ -326,24 +336,26 @@ const servicesByCategory = {
       price: "₹399",
       duration: "45 mins",
       popular: false,
-      features: ["Engine degreasing", "Bay cleaning", "Safe for engine"]
-    }
-  ]
+      features: ["Engine degreasing", "Bay cleaning", "Safe for engine"],
+    },
+  ],
 };
 
 export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
   const { user } = useAuth();
   const [selectedService, setSelectedService] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const availableServices = serviceCategory ? servicesByCategory[serviceCategory] || [] : [];
+
+  const availableServices = serviceCategory
+    ? servicesByCategory[serviceCategory] || []
+    : [];
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
     date: "",
     time: "",
-    notes: ""
+    notes: "",
   });
 
   // Pre-fill form with user profile data
@@ -355,13 +367,13 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
           .select("full_name, phone, address")
           .eq("id", user.id)
           .maybeSingle();
-        
+
         if (profile) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             name: profile.full_name || "",
             phone: profile.phone || "",
-            address: profile.address || ""
+            address: profile.address || "",
           }));
         }
       }
@@ -383,50 +395,73 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
     e.preventDefault();
     if (!selectedService || !user) return;
 
-    // Validate phone number
-    if (formData.phone.length !== 10) {
-      toast.error("Please enter a valid 10-digit phone number");
-      return;
-    }
-
     setIsSubmitting(true);
 
-    // Extract numeric price from string (e.g., "₹199" -> 199)
     const priceMatch = selectedService.price.match(/\d+/);
-    const numericPrice = priceMatch ? parseInt(priceMatch[0], 10) : 0;
+    const amount = priceMatch ? Number(priceMatch[0]) : 0; // rupees
 
-    const { error } = await supabase.from("service_orders").insert({
-      user_id: user.id,
-      service_id: selectedService.id,
-      service_name: selectedService.title,
-      service_price: numericPrice,
-      scheduled_date: formData.date,
-      scheduled_time: formData.time,
-      address: formData.address,
-      phone: formData.phone,
-      notes: formData.notes || null,
-      status: "pending"
-    });
-
-    setIsSubmitting(false);
-
-    if (error) {
-      console.error("Error creating booking:", error);
-      toast.error("Failed to create booking. Please try again.");
+    const razorpayLoaded = await loadRazorpay();
+    if (!razorpayLoaded) {
+      toast.error("Razorpay SDK failed to load");
+      setIsSubmitting(false);
       return;
     }
 
-    toast.success("Booking created successfully! We'll contact you shortly.");
-    onOpenChange(false);
-    setSelectedService(null);
-    setFormData({
-      name: "",
-      phone: "",
-      address: "",
-      date: "",
-      time: "",
-      notes: ""
-    });
+    // PHASE 1️⃣ — Create Razorpay order (backend)
+    const orderRes = await fetch(
+      "http://localhost:4000/api/payments/create-order",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount, // rupees
+        }),
+      },
+    );
+
+    const orderData = await orderRes.json();
+
+    if (!orderRes.ok) {
+      toast.error("Failed to create payment order");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // PHASE 2️⃣ — Open Razorpay checkout
+    const options = {
+  key: "rzp_test_SASQiPOIdXdhH0",
+
+  order_id: orderData.order.id,
+  amount: amount * 100, // ✅ paise
+  currency: "INR",
+
+  name: "Honey Homes",
+  description: selectedService.title,
+
+  prefill: {
+    name: formData.name || "Customer",
+    email: user.email || "test@honeyhomes.com",
+    contact: `+91${formData.phone}`, // ✅ THIS IS THE FIX
+  },
+
+  theme: {
+    color: "#fabd53",
+  },
+
+  modal: {
+    ondismiss: () => {
+      document.body.style.pointerEvents = "auto";
+    },
+  },
+};
+
+    onOpenChange(false); // close booking dialog first
+
+    setTimeout(() => {
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    }, 300);
+    setIsSubmitting(false);
   };
 
   return (
@@ -446,8 +481,8 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
               {availableServices.map((service) => {
                 const IconComponent = service.icon;
                 return (
-                  <Card 
-                    key={service.id} 
+                  <Card
+                    key={service.id}
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-border/50"
                     onClick={() => handleServiceSelect(service)}
                   >
@@ -458,20 +493,30 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-foreground">{service.title}</h3>
+                            <h3 className="font-semibold text-foreground">
+                              {service.title}
+                            </h3>
                             {service.popular && (
-                              <Badge className="bg-primary text-primary-foreground text-xs">Popular</Badge>
+                              <Badge className="bg-primary text-primary-foreground text-xs">
+                                Popular
+                              </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {service.description}
+                          </p>
                           <div className="flex items-center space-x-4 mt-2 text-sm">
                             <div className="flex items-center space-x-1">
                               <IndianRupee className="h-3 w-3 text-primary" />
-                              <span className="font-semibold text-foreground">{service.price}</span>
+                              <span className="font-semibold text-foreground">
+                                {service.price}
+                              </span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <Clock className="h-3 w-3 text-primary" />
-                              <span className="text-muted-foreground">{service.duration}</span>
+                              <span className="text-muted-foreground">
+                                {service.duration}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -483,7 +528,7 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
             </div>
           </>
         ) : (
-          // Booking Form View  
+          // Booking Form View
           <>
             <DialogHeader>
               <div className="flex items-center space-x-2">
@@ -496,7 +541,9 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                  <DialogTitle className="text-2xl">Book {selectedService.title}</DialogTitle>
+                  <DialogTitle className="text-2xl">
+                    Book {selectedService.title}
+                  </DialogTitle>
                   <DialogDescription>
                     Fill in your details to book this service
                   </DialogDescription>
@@ -511,17 +558,23 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                   <CardTitle className="text-lg flex items-center justify-between">
                     {selectedService.title}
                     {selectedService.popular && (
-                      <Badge className="bg-primary text-primary-foreground">Popular</Badge>
+                      <Badge className="bg-primary text-primary-foreground">
+                        Popular
+                      </Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-muted-foreground">{selectedService.description}</p>
-                  
+                  <p className="text-muted-foreground">
+                    {selectedService.description}
+                  </p>
+
                   <div className="flex items-center space-x-6 text-sm">
                     <div className="flex items-center space-x-1">
                       <IndianRupee className="h-4 w-4 text-primary" />
-                      <span className="font-semibold">{selectedService.price}</span>
+                      <span className="font-semibold">
+                        {selectedService.price}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4 text-primary" />
@@ -533,7 +586,11 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                     <p className="text-sm font-medium">What's included:</p>
                     <div className="flex flex-wrap gap-2">
                       {selectedService.features.map((feature, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {feature}
                         </Badge>
                       ))}
@@ -546,21 +603,29 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="flex items-center space-x-1">
+                    <Label
+                      htmlFor="name"
+                      className="flex items-center space-x-1"
+                    >
                       <User className="h-4 w-4" />
                       <span>Full Name</span>
                     </Label>
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       placeholder="Enter your full name"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center space-x-1">
+                    <Label
+                      htmlFor="phone"
+                      className="flex items-center space-x-1"
+                    >
                       <Phone className="h-4 w-4" />
                       <span>Phone Number</span>
                     </Label>
@@ -569,7 +634,9 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
                         setFormData({ ...formData, phone: value });
                       }}
                       placeholder="Enter 10-digit phone number"
@@ -578,20 +645,27 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                       required
                     />
                     {formData.phone && formData.phone.length !== 10 && (
-                      <p className="text-xs text-destructive">Phone number must be exactly 10 digits</p>
+                      <p className="text-xs text-destructive">
+                        Phone number must be exactly 10 digits
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address" className="flex items-center space-x-1">
+                  <Label
+                    htmlFor="address"
+                    className="flex items-center space-x-1"
+                  >
                     <MapPin className="h-4 w-4" />
                     <span>Service Address</span>
                   </Label>
                   <Textarea
                     id="address"
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
                     placeholder="Enter complete address where service is needed"
                     required
                   />
@@ -599,7 +673,10 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="date" className="flex items-center space-x-1">
+                    <Label
+                      htmlFor="date"
+                      className="flex items-center space-x-1"
+                    >
                       <Calendar className="h-4 w-4" />
                       <span>Preferred Date</span>
                     </Label>
@@ -607,8 +684,10 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                       id="date"
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, date: e.target.value })
+                      }
+                      min={new Date().toISOString().split("T")[0]}
                       required
                     />
                   </div>
@@ -624,17 +703,29 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                     <div className="absolute top-full left-0 right-0 z-50 bg-background border rounded-md p-3 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 animate-fade-in">
                       <div className="grid grid-cols-3 gap-2">
                         {[
-                          "09:00 AM", "10:00 AM", "11:00 AM",
-                          "12:00 PM", "01:00 PM", "02:00 PM",
-                          "03:00 PM", "04:00 PM", "05:00 PM",
-                          "06:00 PM", "07:00 PM", "08:00 PM"
+                          "09:00 AM",
+                          "10:00 AM",
+                          "11:00 AM",
+                          "12:00 PM",
+                          "01:00 PM",
+                          "02:00 PM",
+                          "03:00 PM",
+                          "04:00 PM",
+                          "05:00 PM",
+                          "06:00 PM",
+                          "07:00 PM",
+                          "08:00 PM",
                         ].map((slot) => (
                           <Button
                             key={slot}
                             type="button"
-                            variant={formData.time === slot ? "default" : "outline"}
+                            variant={
+                              formData.time === slot ? "default" : "outline"
+                            }
                             className={`text-sm ${formData.time === slot ? "bg-primary text-primary-foreground" : ""}`}
-                            onClick={() => setFormData({ ...formData, time: slot })}
+                            onClick={() =>
+                              setFormData({ ...formData, time: slot })
+                            }
                           >
                             {slot}
                           </Button>
@@ -649,7 +740,9 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                   <Textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
                     placeholder="Any special requirements or notes..."
                     rows={3}
                   />
@@ -662,20 +755,9 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                     onClick={async () => {
                       if (!selectedService || !user) return;
                       const priceMatch = selectedService.price.match(/\d+/);
-                      const numericPrice = priceMatch ? parseInt(priceMatch[0], 10) : 0;
-                      
-                      const { error } = await supabase.from("cart_items").insert({
-                        user_id: user.id,
-                        service_id: selectedService.id,
-                        service_name: selectedService.title,
-                        service_price: numericPrice,
-                        quantity: 1
-                      });
-                      
-                      if (error) {
-                        toast.error("Failed to add to cart");
-                        return;
-                      }
+                      const numericPrice = priceMatch
+                        ? parseInt(priceMatch[0], 10)
+                        : 0;
                       toast.success("Added to cart!");
                       onOpenChange(false);
                     }}
@@ -685,7 +767,11 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
                   </Button>
-                  <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
