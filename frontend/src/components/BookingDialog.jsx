@@ -430,30 +430,57 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
     // PHASE 2️⃣ — Open Razorpay checkout
     const options = {
   key: "rzp_test_SASQiPOIdXdhH0",
-
   order_id: orderData.order.id,
-  amount: amount * 100, // ✅ paise
+  amount: amount * 100,
   currency: "INR",
-
   name: "Honey Homes",
   description: selectedService.title,
 
+  handler: async function (response) {
+    try {
+      const res = await fetch(
+        "http://localhost:4000/api/bookings/confirm",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            serviceId: selectedService.id,
+            serviceName: selectedService.title,
+            price: amount,
+            scheduledDate: formData.date,
+            scheduledTime: formData.time,
+            address: formData.address,
+            phone: formData.phone,
+            notes: formData.notes,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Booking Confirmed!");
+      } else {
+        toast.error("Booking sync failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error after payment");
+    }
+  },
+
   prefill: {
-    name: formData.name || "Customer",
-    email: user.email || "test@honeyhomes.com",
-    contact: `+91${formData.phone}`, // ✅ THIS IS THE FIX
+    name: formData.name,
+    email: user.email,
+    contact: `+91${formData.phone}`,
   },
 
   theme: {
     color: "#fabd53",
   },
-
-  modal: {
-    ondismiss: () => {
-      document.body.style.pointerEvents = "auto";
-    },
-  },
 };
+
 
     onOpenChange(false); // close booking dialog first
 
@@ -752,12 +779,23 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={async () => {
+                      onClick={async () => {
                       if (!selectedService || !user) return;
                       const priceMatch = selectedService.price.match(/\d+/);
-                      const numericPrice = priceMatch
-                        ? parseInt(priceMatch[0], 10)
-                        : 0;
+                      const numericPrice = priceMatch ? parseInt(priceMatch[0], 10) : 0;
+                      
+                      const { error } = await supabase.from("cart_items").insert({
+                        user_id: user.id,
+                        service_id: selectedService.id,
+                        service_name: selectedService.title,
+                        service_price: numericPrice,
+                        quantity: 1
+                      });
+                      
+                      if (error) {
+                        toast.error("Failed to add to cart");
+                        return;
+                      }
                       toast.success("Added to cart!");
                       onOpenChange(false);
                     }}
