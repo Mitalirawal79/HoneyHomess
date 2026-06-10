@@ -439,7 +439,7 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
   handler: async function (response) {
     try {
       const res = await fetch(
-        "https://your-backend.onrender.com/api/bookings/confirm",,
+        "https://your-backend.onrender.com/api/bookings/confirm",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
