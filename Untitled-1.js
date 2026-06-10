@@ -11,7 +11,7 @@
           // 4️⃣ After payment success → confirm booking
           try {
             const bookingRes = await fetch(
-              "http://localhost:4000/api/bookings/confirm",
+              "https://your-backend.onrender.com/api/bookings/confirm",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
