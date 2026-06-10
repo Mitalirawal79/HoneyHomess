@@ -63,7 +63,7 @@ const options = {
       handler: async function (response) {
         // PHASE 3️⃣ — Verify payment (backend)
         const verifyRes = await fetch(
-          "http://localhost:4000/api/payments/verify",
+         "https://your-backend.onrender.com/api/bookings/confirm",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

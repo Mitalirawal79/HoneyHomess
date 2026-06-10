@@ -409,7 +409,7 @@ export const BookingDialog = ({ open, onOpenChange, serviceCategory }) => {
 
     // PHASE 1️⃣ — Create Razorpay order (backend)
     const orderRes = await fetch(
-      "http://localhost:4000/api/payments/create-order",
+      "https://your-backend.onrender.com/api/bookings/confirm",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
